@@ -16,6 +16,18 @@ object SunWeatherNetwork {
 
     suspend fun searchPlaces(query:String) = placeService.searchPlaces(query).await()
 
+    private val weatherService = ServiceCreator.create<WeatherService>()
+
+    suspend fun getDailyWeather(lng:String,lat:String) = weatherService.
+        getDailyWeather(lng, lat).await()
+
+    suspend fun getRealtimeWeather(lng: String,lat: String) = weatherService
+        .getRealtimeWeather(lng, lat).await()
+    
+    /**
+     * //首先声明一个泛型 T ，并将await()函数定义成了Call<T>的扩展函数，
+     * 这样所有返回值是Call类型的Retrofit网络请求接口就都可以直接调用await()函数了
+     */
     private suspend fun <T> Call<T>.await(): T {
         return suspendCoroutine { continuation ->
             enqueue(object : Callback<T>{

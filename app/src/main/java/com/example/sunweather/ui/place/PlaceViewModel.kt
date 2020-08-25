@@ -21,4 +21,14 @@ class PlaceViewModel : ViewModel() {
     fun searchPlaces(query: String){
         searchLiveData.value = query
     }
+
+    /**
+     * 如果配合仓库层就开启子线程用LIveData对象
+     * 再定义两个可变的LIveData对象进行观察
+     */
+    fun savePlace(place: Place) = Repository.savePlace(place)
+
+    fun getSavedPlace() = Repository.getSavedPlace()
+
+    fun isPlaceSaved() = Repository.isPlaceSaved()
 }
