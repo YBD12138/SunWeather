@@ -1,16 +1,21 @@
 package com.example.sunweather.ui.weather
 
+import android.content.Context
 import android.graphics.Color
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
+import android.view.inputmethod.InputMethodManager
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
+import androidx.core.view.GravityCompat
+import androidx.drawerlayout.widget.DrawerLayout
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
+import com.example.sunweather.BaseActivity
 import com.example.sunweather.R
 import com.example.sunweather.logic.model.Weather
 import com.example.sunweather.logic.model.getSky
@@ -24,8 +29,9 @@ import java.util.*
 /**
  * 请求天气数据，并展示到UI界面上
  */
-class WeatherActivity : AppCompatActivity() {
+class WeatherActivity : BaseActivity() {
 
+    var resh  = false
     val viewModel by lazy { ViewModelProvider(this).get(WeatherViewModel::class.java) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -52,13 +58,50 @@ class WeatherActivity : AppCompatActivity() {
         viewModel.wetherLiveData.observe(this, Observer { result->
             val weather = result.getOrNull()
             if(weather!=null){
+                resh = true
                 showWeatherInfo(weather)
             }else{
-                Toast.makeText(this,"无法成功获取天气信息",Toast.LENGTH_SHORT).show()
+                resh = false
+                Toast.makeText(this,"刷新失败\n无法成功获取天气信息",Toast.LENGTH_SHORT).show()
                 result.exceptionOrNull()?.printStackTrace()
             }
+            swipeRefresh.isRefreshing = false
+            if (resh)
+            Toast.makeText(this,"刷新成功",Toast.LENGTH_SHORT).show()
         })
+        //设置下拉刷新的
+        swipeRefresh.setColorSchemeResources(R.color.colorPrimary)
+        refreshWeather()
+        swipeRefresh.setOnRefreshListener {
+            refreshWeather()
+        }
+        //设置下拉刷新的
+        //--------------------------------------------//
+        //滑动菜单的逻辑
+        navBtn.setOnClickListener {
+            drawerLayout.openDrawer(GravityCompat.START)
+        }
+        drawerLayout.addDrawerListener(object: DrawerLayout.DrawerListener{
+            override fun onDrawerStateChanged(newState: Int) {}
+
+            override fun onDrawerSlide(drawerView: View, slideOffset: Float) {}
+
+            override fun onDrawerOpened(drawerView: View) {}
+            //关闭滑动菜单的时候也要关闭输入法
+            override fun onDrawerClosed(drawerView: View) {
+                val manager = getSystemService(Context.INPUT_METHOD_SERVICE)
+                        as InputMethodManager
+                manager.hideSoftInputFromWindow(drawerView.windowToken,
+                    InputMethodManager.HIDE_NOT_ALWAYS)
+            }
+        })
+        //滑动菜单的逻辑
+    }
+
+    fun refreshWeather() {
+        resh = true
         viewModel.refreshWeather(viewModel.locationLng,viewModel.locationLat)
+        swipeRefresh.isRefreshing = true
     }
 
     private fun showWeatherInfo(weather: Weather) {
