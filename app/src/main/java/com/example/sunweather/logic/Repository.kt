@@ -1,11 +1,16 @@
 package com.example.sunweather.logic
 
+import android.content.Context
+import android.content.SharedPreferences
+import androidx.core.content.edit
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.liveData
+import com.example.sunweather.SunWeatherApplication
 import com.example.sunweather.logic.dao.PlaceDao
 import com.example.sunweather.logic.model.Place
 import com.example.sunweather.logic.model.Weather
 import com.example.sunweather.logic.network.SunWeatherNetwork
+import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -16,6 +21,9 @@ import kotlin.coroutines.CoroutineContext
  * 统一封闭入口（仓库层）
  */
 object Repository {
+
+//    public var sp: SharedPreferences = SunWeatherApplication.context.
+//        getSharedPreferences("weather_info", Context.MODE_PRIVATE)
 
     /**
      * 搜索城市的挂起函数，返回的LiveData对象用于观察
@@ -47,6 +55,9 @@ object Repository {
                 if (realtimeResponse.status == "ok" && dailyResponse.status == "ok"){
                     val weather = Weather(realtimeResponse.result.realtime,
                         dailyResponse.result.daily)
+//                    sp.edit {
+//                        putString("weatherInfo",Gson().toJson(weather))
+//                    }
                     Result.success(weather)
                 }else{
                     Result.failure(

@@ -1,9 +1,10 @@
 package com.example.sunweather.ui.weather
 
-import android.content.Context
+import android.content.*
 import android.graphics.Color
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.os.IBinder
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -11,16 +12,24 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
+import androidx.core.content.edit
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import com.example.sunweather.BaseActivity
 import com.example.sunweather.R
+import com.example.sunweather.SunWeatherApplication
+import com.example.sunweather.logic.Repository
+import com.example.sunweather.logic.dao.MyService
 import com.example.sunweather.logic.model.Weather
 import com.example.sunweather.logic.model.getSky
+import com.example.sunweather.logic.network.NetWorkCon
+import com.example.sunweather.ui.place.Model
+import com.google.gson.Gson
 import kotlinx.android.synthetic.main.activity_weather.*
 import kotlinx.android.synthetic.main.forecast.*
+import kotlinx.android.synthetic.main.forecast_item.*
 import kotlinx.android.synthetic.main.life_index.*
 import kotlinx.android.synthetic.main.now.*
 import java.text.SimpleDateFormat
@@ -33,6 +42,21 @@ class WeatherActivity : BaseActivity() {
 
     var resh  = false
     val viewModel by lazy { ViewModelProvider(this).get(WeatherViewModel::class.java) }
+    val sp:SharedPreferences = SunWeatherApplication.context.
+        getSharedPreferences("tianqitongzhi",Context.MODE_PRIVATE)
+    //绑定Activity和Service
+    lateinit var downloadBiner : MyService.DownloadBinder
+
+    private val connection = object : ServiceConnection{
+        override fun onServiceDisconnected(name: ComponentName?) {}
+
+        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
+            downloadBiner = service as MyService.DownloadBinder
+            downloadBiner.Change()
+        }
+
+    }
+    //绑定Activity和Service
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -44,6 +68,9 @@ class WeatherActivity : BaseActivity() {
         window.statusBarColor = Color.TRANSPARENT
         //背景图和状态栏融合到一起
         setContentView(R.layout.activity_weather)
+
+        startmyService()//启动和绑定服务
+
         if(viewModel.locationLng.isEmpty()){
             viewModel.locationLng = intent.getStringExtra("location_lng") ?: ""
             Log.d("lng",viewModel.locationLng)
@@ -54,6 +81,11 @@ class WeatherActivity : BaseActivity() {
         }
         if (viewModel.placeName.isEmpty()){
             viewModel.placeName = intent.getStringExtra("place_name") ?: ""
+            Log.d("lat",viewModel.placeName)
+            sp.edit{
+                putString("placename",viewModel.placeName)
+                apply()
+            }
         }
         viewModel.wetherLiveData.observe(this, Observer { result->
             val weather = result.getOrNull()
@@ -98,20 +130,34 @@ class WeatherActivity : BaseActivity() {
         //滑动菜单的逻辑
     }
 
+    private fun startmyService() {
+        //启动服务Service
+        val intent = Intent(this,MyService::class.java)
+        startService(intent)
+        //*******绑定Activity和Service
+        bindService(intent,connection,Context.BIND_AUTO_CREATE)
+        //*******绑定Activity和Service
+        //启动服务Service
+    }
+
     fun refreshWeather() {
         resh = true
+        Log.d("网络状态",NetWorkCon().STATS.toString())
         viewModel.refreshWeather(viewModel.locationLng,viewModel.locationLat)
         swipeRefresh.isRefreshing = true
     }
 
     private fun showWeatherInfo(weather: Weather) {
-        placeName.text = viewModel.placeName
+
+        val placenname = viewModel.placeName
+        placeName.text = placenname
         val realtime = weather.realtime
         val daily = weather.daily
         //填充now.xml布局中的数据
         val currentTempText = "${realtime.temperature.toInt()}°C"
         currentTemp.text = currentTempText
-        currentSky.text = getSky(realtime.skycon).info
+        val currsky = getSky(realtime.skycon).info
+        currentSky.text = currsky
         val currentPM25Text = "空气指数 ${realtime.airQuality.aqi.chn.toInt()}"
         currentAQI.text = currentPM25Text
         nowLayout.setBackgroundResource(getSky(realtime.skycon).bg)
@@ -143,5 +189,23 @@ class WeatherActivity : BaseActivity() {
         ultravioletText.text = lifeIndex.ultraviolet[0].desc
         carWashingText.text = lifeIndex.carWashing[0].desc
         weatherLayout.visibility = View.VISIBLE
+        //保存到本地缓存中
+        sp.edit {
+            putString("tianqi",temperatureInfo.text.toString())
+            putString("riqi","${dateInfo.text.toString()}")
+            putString("tianqitubiao", weather.daily.skycon[1].value.toString())
+            apply()
+        }
+    }
+
+
+    override fun onDestroy() {
+//        //解绑Activity和Service
+//        unbindService(connection)
+//        //停止服务Service
+//        val intent = Intent(this,MyService::class.java)
+//        stopService(intent)
+//        //停止服务Service
+        super.onDestroy()
     }
 }

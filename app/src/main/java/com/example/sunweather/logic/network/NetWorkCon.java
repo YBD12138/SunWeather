@@ -19,13 +19,14 @@ import androidx.lifecycle.ViewModelProviders;
 import com.example.sunweather.SunWeatherApplication;
 import com.example.sunweather.ui.place.Model;
 import com.example.sunweather.ui.place.PlaceFragment;
+import com.example.sunweather.ui.weather.WeatherActivity;
 
 import static androidx.core.content.ContextCompat.getSystemService;
 
 public class NetWorkCon extends BroadcastReceiver {
     private final String TAG = "NetworkChangedReceiver";;
-    public boolean STATS = false;
-//    private Model model = new Model();
+    public boolean STATS = true;
+ //   private WeatherActivity weatherActivity = new WeatherActivity();
     @Override
     public void onReceive(Context context, Intent intent) {
         Log.i(TAG, "网络状态发生变化");
@@ -90,7 +91,7 @@ public class NetWorkCon extends BroadcastReceiver {
                     Log.i(TAG, "WIFI已断开,移动数据已断开");
                     Toast.makeText(SunWeatherApplication.context,"当前无网络链接",Toast.LENGTH_SHORT).show();
                     STATS = false;
-//                    model.Change(STATS);
+//                    weatherActivity.getMymodel().Nice(STATS);
                     break;
                 case 2:
                     Log.i(TAG, "WIFI已断开,移动数据已连接");
@@ -102,7 +103,7 @@ public class NetWorkCon extends BroadcastReceiver {
                     Log.i(TAG, "WIFI已连接,移动数据已连接");
                     Toast.makeText(SunWeatherApplication.context,"当前网络连接正常",Toast.LENGTH_SHORT).show();
                     STATS = true;
-//                    model.Change(STATS);
+//                    weatherActivity.getMymodel().Nice(STATS);
                     break;
             }
         }

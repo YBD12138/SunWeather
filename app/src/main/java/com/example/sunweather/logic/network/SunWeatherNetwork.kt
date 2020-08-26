@@ -1,5 +1,8 @@
 package com.example.sunweather.logic.network
 
+import android.content.Context
+import android.content.SharedPreferences
+import com.example.sunweather.SunWeatherApplication
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -12,6 +15,7 @@ import kotlin.coroutines.suspendCoroutine
  * 网络数据源访问入口（网络层）
  */
 object SunWeatherNetwork {
+
     private val placeService = ServiceCreator.create<PlaceService>()
 
     suspend fun searchPlaces(query:String) = placeService.searchPlaces(query).await()
@@ -33,6 +37,7 @@ object SunWeatherNetwork {
             enqueue(object : Callback<T>{
                 override fun onResponse(call:Call<T>, response: Response<T>){
                     val body = response.body()
+
                     if(body!=null)continuation.resume(body)
                     else continuation.resumeWithException(
                         RuntimeException("response body is null"))
